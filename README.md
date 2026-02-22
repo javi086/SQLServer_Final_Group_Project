@@ -9,7 +9,7 @@
 ## Team members & roles.
 1. (ROLE): Sheree Drummond - n01730490
     * Description: ddadsdasdddas
-2. (ROLE): Suhani Mehta - n01750525
+2. (Schema Designer): Suhani Mehta - n01750525
     * Description: ddadsdasdddas
 3. (ROLE): Thompson Osei - n01714324
     * Description: ddadsdasdddas
