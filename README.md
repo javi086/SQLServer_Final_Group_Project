@@ -19,7 +19,7 @@ Multimedia Solutions is a Canadian-based media distributor undergoing a strategi
     * Description: 
 
 ## Instructions to run scripts.
-* 
+* TBD
 
 ## Github usernames.
 1. Sheree Drummond (Github username)
@@ -27,6 +27,7 @@ Multimedia Solutions is a Canadian-based media distributor undergoing a strategi
 3. Thompson Osei (Github username)
 4. Kyle Chau (Github username)
 5. Javier Santana (Github username)
+
 
 
 
