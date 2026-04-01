@@ -4,17 +4,17 @@
   DATABASE: MultimediaSolutions
   STUDENT:Jose Javier Santana Vera
 ====================================================================*/
-USE MultimediaSolutions;
-GO;
 
-CREATE TABLE Promotion (
-    PromotionId INT IDENTITY(1,1),
-    PromotionCode VARCHAR(20) NOT NULL,
-    DiscountValue DECIMAL(5,2) NOT NULL,
-    StartDate DATE NOT NULL,
-    EndDate DATE NULL,
 
-    CONSTRAINT PK_Promotion PRIMARY KEY CLUSTERED (PromotionId),
-    CONSTRAINT UQ_PromoCode UNIQUE (PromotionCode),
-    CONSTRAINT CK_Promo_Value CHECK (DiscountValue <= 50.00) -- This will help with our business rule
+CREATE TABLE Reports.promotion (
+    promotion_id        INT IDENTITY(1,1),
+    promotion_code      VARCHAR(20) NOT NULL,
+    discount_value      DECIMAL(5,2) NOT NULL,
+    start_date          DATE NOT NULL,
+    end_date            DATE NULL,
+
+    CONSTRAINT PK_Reports_promotion             PRIMARY KEY CLUSTERED (promotion_id),
+    CONSTRAINT UQ_Reports_promotion_code        UNIQUE (promotion_code),
+    CONSTRAINT CK_Reports_promotion_value       CHECK (discount_value <= 50.00)
 );
+GO

@@ -1,19 +1,21 @@
-CREATE TABLE Employee (
-    EmployeeId INT IDENTITY(1,1),
-    FirstName VARCHAR(50) NOT NULL,
-    LastName VARCHAR(50) NOT NULL,
-    JobTitle VARCHAR(100) NOT NULL,
-    Department VARCHAR(100) NOT NULL,
-    ReportsTo INT NULL,
-    HireDate DATE NOT NULL,
-    EmploymentStatus VARCHAR(20) NOT NULL,
-    WorkEmail VARCHAR(100) NOT NULL,
-    CountryId INT NOT NULL,
 
-    CONSTRAINT PK_Employee PRIMARY KEY CLUSTERED (EmployeeId),
-    CONSTRAINT UQ_Employee_Email UNIQUE (WorkEmail), 
-    CONSTRAINT FK_Employee_Manager  FOREIGN KEY (ReportsTo) REFERENCES Employee(EmployeeId),
-    CONSTRAINT FK_Employee_Country  FOREIGN KEY (CountryId) REFERENCES Country(CountryId),
-    CONSTRAINT CK_Employee_Status CHECK (EmploymentStatus IN ('Active', 'Inactive'))
+
+CREATE TABLE Reports.employee (
+    employee_id         INT IDENTITY(1,1),
+    first_name          VARCHAR(50) NOT NULL,
+    last_name           VARCHAR(50) NOT NULL,
+    job_title           VARCHAR(100) NOT NULL,
+    department          VARCHAR(100) NOT NULL,
+    reports_to          INT NULL,
+    hire_date           DATE NOT NULL,
+    employment_status   VARCHAR(20) NOT NULL,
+    work_email          VARCHAR(100) NOT NULL,
+    country_id          INT NOT NULL,
+
+    CONSTRAINT PK_Reports_employee             PRIMARY KEY CLUSTERED (employee_id),
+    CONSTRAINT UQ_Reports_employee_email       UNIQUE (work_email),
+    CONSTRAINT FK_Reports_employee_manager     FOREIGN KEY (reports_to) REFERENCES Reports.employee(employee_id),
+    CONSTRAINT FK_Reports_employee_country     FOREIGN KEY (country_id) REFERENCES Reports.country(country_id),
+    CONSTRAINT CK_Reports_employee_status      CHECK (employment_status IN ('Active', 'Inactive'))
 );
 GO

@@ -1,22 +1,24 @@
-CREATE TABLE Customer (
-    CustomerId INT IDENTITY(1,1),
-    FirstName VARCHAR(50) NOT NULL,
-    LastName VARCHAR(50) NOT NULL,
-    Email VARCHAR(100) NOT NULL,
-    PhoneNumber VARCHAR(20),
-    DateOfBirth DATE,
-    Address VARCHAR(150),
-    City VARCHAR(50),
-    State VARCHAR(50),
-    CountryId INT NOT NULL,
-    PostalCode VARCHAR(20),
-    AccountStatus VARCHAR(20) NOT NULL,
-    SupportRepId INT,
 
-    CONSTRAINT PK_Customer PRIMARY KEY CLUSTERED (CustomerId),
-    CONSTRAINT UQ_Customer_Email UNIQUE (Email),
-    CONSTRAINT FK_Customer_Country FOREIGN KEY (CountryId) REFERENCES Country(CountryId),
-    CONSTRAINT FK_Customer_SupportRep FOREIGN KEY (SupportRepId) REFERENCES Employee(EmployeeId),
-    CONSTRAINT CK_Customer_Status CHECK (AccountStatus IN ('Active', 'Suspended', 'Cancelled'))
+
+CREATE TABLE Reports.customer (
+    customer_id         INT IDENTITY(1,1),
+    first_name          VARCHAR(50) NOT NULL,
+    last_name           VARCHAR(50) NOT NULL,
+    email               VARCHAR(100) NOT NULL,
+    phone_number        VARCHAR(20),
+    date_of_birth       DATE,
+    address             VARCHAR(150),
+    city                VARCHAR(50),
+    state               VARCHAR(50),
+    country_id          INT NOT NULL,
+    postal_code         VARCHAR(20),
+    account_status      VARCHAR(20) NOT NULL,
+    support_rep_id      INT,
+
+    CONSTRAINT PK_Reports_customer              PRIMARY KEY CLUSTERED (customer_id),
+    CONSTRAINT UQ_Reports_customer_email        UNIQUE (email),
+    CONSTRAINT FK_Reports_customer_country      FOREIGN KEY (country_id) REFERENCES Reports.country(country_id),
+    CONSTRAINT FK_Reports_customer_support_rep  FOREIGN KEY (support_rep_id) REFERENCES Reports.employee(employee_id),
+    CONSTRAINT CK_Reports_customer_status       CHECK (account_status IN ('Active', 'Suspended', 'Cancelled'))
 );
 GO

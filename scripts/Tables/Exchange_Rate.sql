@@ -5,13 +5,14 @@
   STUDENT:Jose Javier Santana Vera
 ====================================================================*/
 
-CREATE TABLE Exchange_Rate (
-    ExchangeRateId INT IDENTITY(1,1),
-    FromCurrency CHAR(3) NOT NULL,
-    ToCurrency CHAR(3) DEFAULT 'CAD',
-    Rate DECIMAL(18,6) NOT NULL,
-    EffectiveDate DATETIME DEFAULT GETDATE(),
 
-    CONSTRAINT PK_ExchangeRate PRIMARY KEY CLUSTERED (ExchangeRateId)
+CREATE TABLE Reports.exchange_rate (
+    exchange_rate_id    INT IDENTITY(1,1),
+    from_currency       CHAR(3) NOT NULL,
+    to_currency         CHAR(3) DEFAULT 'CAD',
+    rate                DECIMAL(18,6) NOT NULL,
+    effective_date      DATETIME DEFAULT GETDATE(),
+
+    CONSTRAINT PK_Reports_exchange_rate        PRIMARY KEY CLUSTERED (exchange_rate_id)
 );
 GO
