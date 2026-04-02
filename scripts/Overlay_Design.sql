@@ -184,15 +184,6 @@ CREATE TABLE Reports.order_details (
 GO
 
 
-/*--------------------------------------
-            Creation of Child tables
----------------------------------------*/
-
-
-
-
-
-
 
 
 
