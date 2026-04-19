@@ -33,3 +33,19 @@ GO
 
 PRINT 'idx_order_info_active_filtered created successfully.';
 GO
+
+
+/* evidence
+-- This query hits the filtered index with a covering scan (no table lookup)
+SELECT 
+    customer_id,
+    order_date,
+    total_amount,
+    currency_code,
+    promotion_id,
+    country_id
+FROM Reports.order_info
+WHERE promotion_id IS NOT NULL
+  AND customer_id = 7
+ORDER BY order_date DESC;
+/
