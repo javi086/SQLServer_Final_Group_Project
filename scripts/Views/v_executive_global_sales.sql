@@ -6,6 +6,8 @@
 
   This view provides sales information from all countries
 ==============================================================================================*/
+USE MultimediaSolutions;
+GO
 
 CREATE VIEW Reports.v_executive_global_sales
 AS
@@ -23,3 +25,4 @@ JOIN Reports.country co ON o.country_id = co.country_id
 JOIN Reports.exchange_rate er ON o.currency_code = er.from_currency
 WHERE er.to_currency = 'CAD';
 GO
+
