@@ -16,7 +16,9 @@ Multimedia Solutions is a Canadian-based media distributor undergoing a strategi
 4. (ROLE - TBD): Kyle Chau - n10004894
     * Description: 
 5. (ROLE - TBD): Javier Santana - n01753766
-    * Description: 
+    * Description:
+6. (ROLE - TBD): Tandin Phurba - n01654961
+    * Description:
 
 ## Instructions to run scripts.
 * TBD
@@ -27,7 +29,7 @@ Multimedia Solutions is a Canadian-based media distributor undergoing a strategi
 3. Thompson Osei (Github username)
 4. Kyle Chau (Github username)
 5. Javier Santana (Github username)
-
+6. Tandin Phurba (gurrrrrbu)
 
 
 
