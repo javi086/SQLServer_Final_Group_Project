@@ -38,7 +38,7 @@ HAVING SUM(TotalDue) > 50000;
 GO
 
 /*
-📌 Capture logical reads from the Messages tab.
+Capture logical reads from the Messages tab.
 Record value here as SQL comment:
 
 -- BEFORE INDEX:
@@ -108,3 +108,112 @@ This reduces:
 This demonstrates measurable performance improvement
 through targeted index design aligned with query pattern.
 */
+
+-- ========================================
+-- PHASE 3 – FILTERED INDEXES OPTIMIZATION
+-- ========================================
+### Overview
+
+This section implements a **filtered non-clustered index** to optimize query performance in the system. The focus is on improving access to frequently queried data while reducing storage and processing overhead.
+
+---
+
+### Table Used
+
+**Reports.order_info**
+
+This table stores transactional order data and includes the column `total_amount`, which is frequently used in reporting queries.
+
+---
+
+### Implementation
+
+```sql
+CREATE NONCLUSTERED INDEX idx_high_value_orders
+ON Reports.order_info(order_id)
+INCLUDE (customer_id, order_date, total_amount)
+WHERE total_amount > 1000;
+```
+
+---
+
+### Justification
+
+* High-value orders are commonly queried for reporting and analytics
+* Indexing only these records reduces index size
+* Improves performance by avoiding full table scans
+
+---
+
+### Performance Validation
+
+The following tools were used to evaluate performance:
+
+* `SET STATISTICS IO ON`
+* `SET STATISTICS TIME ON`
+* `SET SHOWPLAN_TEXT ON`
+
+#### Result:
+
+* Query execution changed from **Table Scan → Index Seek**
+* Reduced logical reads
+* Faster execution time
+
+---
+
+### Query Example
+
+```sql
+SELECT order_id, customer_id, order_date, total_amount
+FROM Reports.order_info
+WHERE total_amount > 1000;
+```
+
+---
+
+### Behavior
+
+* The filtered index is used only when the condition matches:
+
+```sql
+WHERE total_amount > 1000
+```
+
+* It is not used for queries outside the filter condition:
+
+```sql
+WHERE total_amount <= 1000
+```
+
+---
+
+### Integration
+
+The filtered index improves performance for:
+
+* Reporting queries on high-value orders
+* Data analysis and business insights
+* Any stored procedures that filter on `total_amount > 1000`
+
+---
+
+### Summary
+
+The filtered index was implemented to optimize query performance by indexing only relevant data. This approach reduces resource usage while ensuring efficient execution plans within the system.
+
+
+### Performance Evidence (Screenshots)
+
+**1. Before Index – Query Performance**
+Shows higher logical reads and execution cost
+
+**2. Before Index – Execution Plan**
+Shows Table Scan
+
+**3. After Index – Query Performance**
+Shows reduced logical reads and faster execution
+
+**4. After Index – Execution Plan**
+Shows Index Seek using filtered index
+
+These screenshots demonstrate the effectiveness of the filtered index in improving query performance.
