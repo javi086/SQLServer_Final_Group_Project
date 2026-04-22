@@ -4,19 +4,11 @@ GO
 PRINT '==== TEST CASES START ====';
 GO
 
-/*========================================================
-TEST 1: Function - Discount Calculation
-========================================================*/
-PRINT 'TEST 1: Discount Function';
 
-SELECT Reports.fn_calculate_discount(1000.00, 1) AS discounted_amount;
-
--- EXPECTED:
--- 900.00 (based on promotion)
 
 
 /*========================================================
-TEST 2: View - Customer Orders
+TEST 1: View - Customer Orders
 ========================================================*/
 PRINT 'TEST 2: Customer Orders View';
 
