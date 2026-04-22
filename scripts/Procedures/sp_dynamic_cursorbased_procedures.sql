@@ -1,14 +1,14 @@
 -- ==============================================
 -- 1. Dynamic Customer Retrieval Procedure
 -- ==============================================
-CREATE OR ALTER PROCEDURE sp_GetCustomersDynamic
+CREATE OR ALTER PROCEDURE Reports.sp_GetCustomersDynamic
     @p_city NVARCHAR(100) = NULL,
     @p_status NVARCHAR(50) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @sql NVARCHAR(MAX) = 'SELECT * FROM Customer WHERE 1=1';
+    DECLARE @sql NVARCHAR(MAX) = 'SELECT * FROM Reports.customer WHERE 1=1';
 
     IF @p_city IS NOT NULL
         SET @sql += ' AND City = @city';
@@ -29,14 +29,14 @@ GO
 -- ==============================================
 -- 2. Update Customer Status Dynamically
 -- ==============================================
-CREATE OR ALTER PROCEDURE sp_UpdateCustomerStatusDynamic
+CREATE OR ALTER PROCEDURE Reports.sp_UpdateCustomerStatusDynamic
     @p_customerId INT,
     @p_newStatus NVARCHAR(50)
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @sql NVARCHAR(MAX) = 'UPDATE Customer SET AccountStatus = @status WHERE CustomerId = @id';
+    DECLARE @sql NVARCHAR(MAX) = 'UPDATE Reports.customer SET AccountStatus = @status WHERE CustomerId = @id';
 
     EXEC sp_executesql @sql,
         N'@status NVARCHAR(50), @id INT',
@@ -51,7 +51,7 @@ GO
 -- ==============================================
 -- 3. Display All Customers
 -- ==============================================
-CREATE OR ALTER PROCEDURE sp_DisplayCustomers
+CREATE OR ALTER PROCEDURE Reports.sp_DisplayCustomers
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -59,7 +59,7 @@ BEGIN
     DECLARE @FirstName NVARCHAR(100), @LastName NVARCHAR(100), @Email NVARCHAR(100), @AccountStatus NVARCHAR(50);
 
     DECLARE cust_cursor CURSOR FOR
-        SELECT FirstName, LastName, Email, AccountStatus FROM Customer;
+        SELECT FirstName, LastName, Email, AccountStatus FROM Reports.customer;
 
     OPEN cust_cursor;
 
@@ -78,7 +78,7 @@ GO
 -- ==============================================
 -- 4. List Customers by Employee
 -- ==============================================
-CREATE OR ALTER PROCEDURE sp_CustomersByEmployee
+CREATE OR ALTER PROCEDURE Reports.sp_CustomersByEmployee
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -97,7 +97,7 @@ BEGIN
         PRINT 'Employee: ' + @EmpF + ' ' + @EmpL;
 
         DECLARE cust_cursor CURSOR FOR
-            SELECT FirstName, LastName FROM Customer WHERE SupportRepId = @EmpId;
+            SELECT FirstName, LastName FROM Reports.customer WHERE SupportRepId = @EmpId;
 
         OPEN cust_cursor;
 
@@ -122,7 +122,7 @@ GO
 -- ==============================================
 -- 5. Suspend Inactive Customers
 -- ==============================================
-CREATE OR ALTER PROCEDURE sp_SuspendInactiveCustomers
+CREATE OR ALTER PROCEDURE Reports.sp_SuspendInactiveCustomers
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -130,7 +130,7 @@ BEGIN
     DECLARE @CustId INT;
 
     DECLARE cust_cursor CURSOR FOR
-        SELECT CustomerId FROM Customer WHERE SupportRepId IS NULL;
+        SELECT CustomerId FROM Reports.customer WHERE SupportRepId IS NULL;
 
     OPEN cust_cursor;
 

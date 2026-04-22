@@ -22,10 +22,10 @@ IF EXISTS (
     WHERE name = N'idx_order_info_active_filtered'
     AND object_id = OBJECT_ID(N'Reports.order_info')
 )
-    DROP INDEX idx_order_info_active_filtered ON Reports.order_info;
+    DROP INDEX Reports.idx_order_info_active_filtered ON Reports.order_info;
 GO
 
-CREATE NONCLUSTERED INDEX idx_order_info_active_filtered
+CREATE NONCLUSTERED INDEX Reports.idx_order_info_active_filtered
 ON Reports.order_info (customer_id, order_date)
 INCLUDE (total_amount, currency_code, promotion_id, country_id)
 WHERE promotion_id IS NOT NULL;

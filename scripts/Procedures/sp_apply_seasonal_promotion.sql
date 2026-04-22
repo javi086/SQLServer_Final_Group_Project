@@ -17,11 +17,11 @@ BEGIN
 
     -- Get the discount value from our promotion table
     SELECT @promo_id = promotion_id, @discount = discount_value 
-    FROM promotion  WHERE promotion_code = @promotion_code;
+    FROM Reports.promotion  WHERE promotion_code = @promotion_code;
 
     IF @promo_id IS NOT NULL
     BEGIN
-        UPDATE order_info SET promotion_id = @promo_id, total_amount = total_amount - (total_amount * (@discount / 100))
+        UPDATE Reports.order_info SET promotion_id = @promo_id, total_amount = total_amount - (total_amount * (@discount / 100))
         WHERE order_id = @order_id;
         PRINT 'Promotion applied successfully.';
     END

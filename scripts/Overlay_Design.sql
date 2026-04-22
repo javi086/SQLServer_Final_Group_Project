@@ -10,34 +10,26 @@
 USE MultimediaSolutions;
 GO
 
-
 /*====================================================================
-     PRE-FLIGHT CHECKS
+     1. PRE-FLIGHT & SCHEMA SETUP
 ====================================================================*/
 IF DB_ID(N'MultimediaSolutions') IS NULL
 BEGIN
-    RAISERROR('MultimediaSolutions database not found. Install/restore MultimediaSolutions before running.', 16, 1);
+    RAISERROR('MultimediaSolutions database not found. Please restore it first.', 16, 1);
     RETURN;
 END
 GO
 
-
-/*====================================================================
-     SCHEMA
-====================================================================*/
 IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = N'Reports')
 BEGIN
     EXEC(N'CREATE SCHEMA Reports AUTHORIZATION dbo;');
 END
 GO
 
-
-
 /*====================================================================
-     CLEANUP 
+     2. CLEANUP (Drop existing objects to allow re-runs)
 ====================================================================*/
-
--- Drop Roles
+-- Drop Roles (Must drop users/members first if assigned)
 IF DATABASE_PRINCIPAL_ID('FinanceRole') IS NOT NULL DROP ROLE FinanceRole;
 IF DATABASE_PRINCIPAL_ID('MarketingRole') IS NOT NULL DROP ROLE MarketingRole;
 IF DATABASE_PRINCIPAL_ID('ExecutiveRole') IS NOT NULL DROP ROLE ExecutiveRole;
@@ -48,606 +40,363 @@ IF EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'FinanceAccountant
     DROP USER FinanceAccountant;
 GO
 
--- Tables (child first)
+-- Drop Views
+IF OBJECT_ID(N'Reports.v_customer_orders', N'V') IS NOT NULL DROP VIEW Reports.v_customer_orders;
+IF OBJECT_ID(N'Reports.v_executive_global_sales', N'V') IS NOT NULL DROP VIEW Reports.v_executive_global_sales;
 
+-- Drop Procedures
+IF OBJECT_ID(N'Reports.sp_apply_seasonal_promotion', N'P') IS NOT NULL DROP PROCEDURE Reports.sp_apply_seasonal_promotion;
+IF OBJECT_ID(N'Reports.sp_update_exchange_rate', N'P') IS NOT NULL DROP PROCEDURE Reports.sp_update_exchange_rate;
+
+-- Drop Tables (Child tables first)
 IF OBJECT_ID(N'Reports.order_details', N'U') IS NOT NULL DROP TABLE Reports.order_details;
-GO
 IF OBJECT_ID(N'Reports.order_info', N'U') IS NOT NULL DROP TABLE Reports.order_info;
-GO
 IF OBJECT_ID(N'Reports.customer', N'U') IS NOT NULL DROP TABLE Reports.customer;
-GO
 IF OBJECT_ID(N'Reports.employee', N'U') IS NOT NULL DROP TABLE Reports.employee;
-GO
-
--- Parents tables (No Dependencies)
 IF OBJECT_ID(N'Reports.country', N'U') IS NOT NULL DROP TABLE Reports.country;
-GO
 IF OBJECT_ID(N'Reports.promotion', N'U') IS NOT NULL DROP TABLE Reports.promotion;
-GO
 IF OBJECT_ID(N'Reports.exchange_rate', N'U') IS NOT NULL DROP TABLE Reports.exchange_rate;
+IF OBJECT_ID(N'Reports.trg_check_promotion_limit', N'TR') IS NOT NULL DROP TRIGGER Reports.trg_check_promotion_limit;
+
 GO
 
-
-
 /*====================================================================
-     CREATION OF PARENT TABLES (other tables reference them)
+     3. TABLE CREATION (Standardized & Fixed)
 ====================================================================*/
-
+-- Country Table
 CREATE TABLE Reports.country (
-    country_id          INT IDENTITY(1,1),
-    country_name        VARCHAR(50) NOT NULL,
-    country_code        CHAR(3) NOT NULL,
-    currency_code       CHAR(3) NOT NULL,
-
-    CONSTRAINT PK_Reports_country             PRIMARY KEY CLUSTERED (country_id),
-    CONSTRAINT UQ_Reports_country_name        UNIQUE (country_name),
-    CONSTRAINT UQ_Reports_country_code        UNIQUE (country_code)
+    country_id INT IDENTITY(1,1) NOT NULL,
+    country_name VARCHAR(50) NOT NULL,
+    country_code CHAR(3) NOT NULL,
+    currency_code CHAR(3) NOT NULL,
+    CONSTRAINT PK_Reports_country PRIMARY KEY CLUSTERED (country_id),
+    CONSTRAINT UQ_Reports_country_name UNIQUE (country_name),
+    CONSTRAINT UQ_Reports_country_code UNIQUE (country_code)
 );
-GO
 
+-- Promotion Table
 CREATE TABLE Reports.promotion (
-    promotion_id        INT IDENTITY(1,1),
-    promotion_code      VARCHAR(20) NOT NULL,
-    discount_value      DECIMAL(5,2) NOT NULL,
-    start_date          DATE NOT NULL,
-    end_date            DATE NULL,
-
-    CONSTRAINT PK_Reports_promotion             PRIMARY KEY CLUSTERED (promotion_id),
-    CONSTRAINT UQ_Reports_promotion_code        UNIQUE (promotion_code),
-    CONSTRAINT CK_Reports_promotion_value       CHECK (discount_value <= 50.00)
+    promotion_id INT IDENTITY(1,1) NOT NULL,
+    promotion_code VARCHAR(20) NOT NULL,
+    discount_value DECIMAL(5,2) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NULL,
+    CONSTRAINT PK_Reports_promotion PRIMARY KEY CLUSTERED (promotion_id),
+    CONSTRAINT UQ_Reports_promotion_code UNIQUE (promotion_code),
+    CONSTRAINT CK_Reports_promotion_discount CHECK (discount_value <= 50.00)
 );
-GO
 
+-- Exchange Rate Table (FIXED - Column-level defaults)
 CREATE TABLE Reports.exchange_rate (
-    exchange_rate_id    INT IDENTITY(1,1),
-    from_currency       CHAR(3) NOT NULL,
-    to_currency         CHAR(3) DEFAULT 'CAD',
-    rate                DECIMAL(18,6) NOT NULL,
-    effective_date      DATETIME DEFAULT GETDATE(),
-
-    CONSTRAINT PK_Reports_exchange_rate        PRIMARY KEY CLUSTERED (exchange_rate_id)
+    exchange_rate_id INT IDENTITY(1,1) NOT NULL,
+    from_currency CHAR(3) NOT NULL,
+    to_currency CHAR(3) NOT NULL DEFAULT 'CAD',      
+    rate DECIMAL(18,6) NOT NULL,
+    effective_date DATETIME NOT NULL DEFAULT GETDATE(),  
+    CONSTRAINT PK_Reports_exchange_rate PRIMARY KEY CLUSTERED (exchange_rate_id)
 );
-GO
 
-
-
+-- Employee Table
 CREATE TABLE Reports.employee (
-    employee_id         INT IDENTITY(1,1),
-    first_name          VARCHAR(50) NOT NULL,
-    last_name           VARCHAR(50) NOT NULL,
-    job_title           VARCHAR(100) NOT NULL,
-    department          VARCHAR(100) NOT NULL,
-    reports_to          INT NULL,
-    hire_date           DATE NOT NULL,
-    employment_status   VARCHAR(20) NOT NULL,
-    work_email          VARCHAR(100) NOT NULL,
-    country_id          INT NOT NULL,
-
-    CONSTRAINT PK_Reports_employee             PRIMARY KEY CLUSTERED (employee_id),
-    CONSTRAINT UQ_Reports_employee_email       UNIQUE (work_email),
-    CONSTRAINT FK_Reports_employee_manager     FOREIGN KEY (reports_to) REFERENCES Reports.employee(employee_id),
-    CONSTRAINT FK_Reports_employee_country     FOREIGN KEY (country_id) REFERENCES Reports.country(country_id),
-    CONSTRAINT CK_Reports_employee_status      CHECK (employment_status IN ('Active', 'Inactive'))
+    employee_id INT IDENTITY(1,1) PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    reports_to INT NULL REFERENCES Reports.employee(employee_id),
+    country_id INT NOT NULL REFERENCES Reports.country(country_id),
+    work_email VARCHAR(100) NOT NULL UNIQUE
 );
-GO
 
+-- Customer Table
 CREATE TABLE Reports.customer (
-    customer_id         INT IDENTITY(1,1),
-    first_name          VARCHAR(50) NOT NULL,
-    last_name           VARCHAR(50) NOT NULL,
-    email               VARCHAR(100) NOT NULL,
-    phone_number        VARCHAR(20),
-    date_of_birth       DATE,
-    address             VARCHAR(150),
-    city                VARCHAR(50),
-    state               VARCHAR(50),
-    country_id          INT NOT NULL,
-    postal_code         VARCHAR(20),
-    account_status      VARCHAR(20) NOT NULL,
-    support_rep_id      INT,
-
-    CONSTRAINT PK_Reports_customer              PRIMARY KEY CLUSTERED (customer_id),
-    CONSTRAINT UQ_Reports_customer_email        UNIQUE (email),
-    CONSTRAINT FK_Reports_customer_country      FOREIGN KEY (country_id) REFERENCES Reports.country(country_id),
-    CONSTRAINT FK_Reports_customer_support_rep  FOREIGN KEY (support_rep_id) REFERENCES Reports.employee(employee_id),
-    CONSTRAINT CK_Reports_customer_status       CHECK (account_status IN ('Active', 'Suspended', 'Cancelled'))
+    customer_id INT IDENTITY(1,1) NOT NULL,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    account_status VARCHAR(20) NOT NULL,
+    support_rep_id INT NULL,
+    country_id INT NULL,
+    CONSTRAINT PK_Reports_customer PRIMARY KEY CLUSTERED (customer_id),
+    CONSTRAINT UQ_Reports_customer_email UNIQUE (email),
+    CONSTRAINT CK_Reports_customer_status CHECK (account_status IN ('Active', 'Suspended', 'Cancelled')),
+    CONSTRAINT FK_Reports_customer_employee FOREIGN KEY (support_rep_id) 
+        REFERENCES Reports.employee(employee_id),
+    CONSTRAINT FK_Reports_customer_country FOREIGN KEY (country_id) 
+        REFERENCES Reports.country(country_id)
 );
-GO
 
-
-
+-- Order Info Table
 CREATE TABLE Reports.order_info (
-    order_id            INT IDENTITY(1,1),      
-    customer_id         INT NOT NULL,                         
-    order_date          DATETIME NOT NULL,                      
-    billing_address     NVARCHAR(70),                      
-    billing_city        NVARCHAR(40),                       
-    country_id          INT NOT NULL,                      
-    total_amount        DECIMAL(10,2) NOT NULL,
-    currency_code       CHAR(3) NOT NULL,
-    promotion_id        INT NULL,
-
-    CONSTRAINT PK_Reports_order_info                 PRIMARY KEY CLUSTERED (order_id),
-    CONSTRAINT FK_Reports_order_info_customer        FOREIGN KEY (customer_id) REFERENCES Reports.customer(customer_id),
-    CONSTRAINT FK_Reports_order_info_country         FOREIGN KEY (country_id) REFERENCES Reports.country(country_id),
-    CONSTRAINT FK_Reports_order_info_promotion       FOREIGN KEY (promotion_id) REFERENCES Reports.promotion(promotion_id)
+    order_id INT IDENTITY(1,1) NOT NULL,
+    customer_id INT NOT NULL,
+    order_date DATETIME NOT NULL,
+    total_amount DECIMAL(10,2) NOT NULL,
+    currency_code CHAR(3) NOT NULL,
+    promotion_id INT NULL,
+    country_id INT NULL,
+    CONSTRAINT PK_Reports_order_info PRIMARY KEY NONCLUSTERED (order_id),
+    CONSTRAINT FK_Reports_order_info_customer FOREIGN KEY (customer_id) 
+        REFERENCES Reports.customer(customer_id),
+    CONSTRAINT FK_Reports_order_info_promotion FOREIGN KEY (promotion_id) 
+        REFERENCES Reports.promotion(promotion_id),
+    CONSTRAINT FK_Reports_order_info_country FOREIGN KEY (country_id) 
+        REFERENCES Reports.country(country_id)
 );
-GO
 
+-- Order Details Table
 CREATE TABLE Reports.order_details (
-    order_detail_id     INT IDENTITY(1,1), 
-    order_id            INT NOT NULL,                                                         
-    unit_price          DECIMAL(10,2) NOT NULL,                
-    quantity            INT NOT NULL,                            
-
-    CONSTRAINT PK_Reports_order_details              PRIMARY KEY CLUSTERED (order_detail_id),
-    CONSTRAINT FK_Reports_order_details_order        FOREIGN KEY (order_id) REFERENCES Reports.order_info(order_id),
-    CONSTRAINT CK_Reports_order_details_quantity     CHECK (quantity > 0)
+    order_detail_id INT IDENTITY(1,1) NOT NULL,
+    order_id INT NOT NULL,
+    unit_price DECIMAL(10,2) NOT NULL,
+    quantity INT NOT NULL,
+    CONSTRAINT PK_Reports_order_details PRIMARY KEY CLUSTERED (order_detail_id),
+    CONSTRAINT FK_Reports_order_details_order FOREIGN KEY (order_id) 
+        REFERENCES Reports.order_info(order_id),
+    CONSTRAINT CK_Reports_order_details_quantity CHECK (quantity > 0)
 );
 GO
-
-
-
-
 
 /*====================================================================
-     INSERTS
+     4. DATA POPULATION (Seed Data)
 ====================================================================*/
-
 -- Country
-
 INSERT INTO Reports.country (country_name, country_code, currency_code) 
 VALUES
-        ('Canada', 'CAN', 'CAD'),
-        ('United States', 'USA', 'USD'),
-        ('Mexico', 'MEX', 'MXN'),
-        ('India', 'IND', 'INR'),
-        ('Russia', 'RUS', 'RUB'),
-        ('China', 'CHN', 'CNY'),
-        ('Brazil', 'BRA', 'BRL'),
-        ('United Kingdom', 'GBR', 'GBP'),
-        ('Germany', 'DEU', 'EUR'),
-        ('Japan', 'JPN', 'JPY');
+    ('France', 'FRA', 'EUR'),
+    ('Italy', 'ITA', 'EUR'),
+    ('Spain', 'ESP', 'EUR'),
+    ('Australia', 'AUS', 'AUD'),
+    ('South Korea', 'KOR', 'KRW'),
+    ('Argentina', 'ARG', 'ARS'),
+    ('Colombia', 'COL', 'COP'),
+    ('South Africa', 'ZAF', 'ZAR'),
+    ('Egypt', 'EGY', 'EGP'),
+    ('Turkey', 'TUR', 'TRY'),
+    ('Netherlands', 'NLD', 'EUR'),
+    ('Switzerland', 'CHE', 'CHF'),
+    ('Sweden', 'SWE', 'SEK'),
+    ('Norway', 'NOR', 'NOK'),
+    ('Poland', 'POL', 'PLN');
+GO
 
-        GO
+-- Employee
+INSERT INTO Reports.employee (first_name, last_name, work_email, country_id) 
+VALUES
+    ('Robert', 'Taylor', 'robert.t@multimedia.ca', 1),
+    ('Linda', 'Johnson', 'linda.j@multimedia.us', 2),
+    ('Miguel', 'Hernandez', 'miguel.h@multimedia.mx', 3),
+    ('Sanjay', 'Gupta', 'sanjay.g@multimedia.in', 4),
+    ('Dmitry', 'Sokolov', 'dmitry.s@multimedia.ru', 5),
+    ('Li', 'Zheng', 'li.z@multimedia.cn', 6),
+    ('Adriana', 'Lima', 'adriana.l@multimedia.br', 7),
+    ('Oliver', 'Brown', 'oliver.b@multimedia.uk', 8),
+    ('Sophia', 'Muller', 'sophia.m@multimedia.de', 9),
+    ('Takumi', 'Sato', 'takumi.s@multimedia.jp', 10),
+    ('Emma', 'Wilson', 'emma.w@multimedia.ca', 1),
+    ('Lucas', 'Garcia', 'lucas.g@multimedia.es', 9),
+    ('Amara', 'Kaur', 'amara.k@multimedia.in', 4),
+    ('Ivan', 'Petrov', 'ivan.p@multimedia.ru', 5);
 
--- Promotion
+-- Customer
+INSERT INTO Reports.customer (first_name, last_name, email, account_status, country_id, support_rep_id) 
+VALUES
+    ('Marco', 'Polo', 'marco.p@explorer.it', 'Active', 9, 3),
+    ('Elena', 'Vance', 'elena.v@blackmesa.com', 'Active', 2, 11),
+    ('Arthur', 'Morgan', 'arthur.m@van-der-linde.us', 'Suspended', 2, 8),
+    ('Jill', 'Valentine', 'jill.v@stars.jp', 'Active', 10, 10),
+    ('Leon', 'Kennedy', 'leon.k@rpd.us', 'Active', 2, 10),
+    ('Lara', 'Croft', 'lara.c@manor.uk', 'Active', 8, 5),
+    ('Geralt', 'Rivia', 'geralt.r@kaermorhen.pl', 'Active', 9, 6),
+    ('Kratos', 'Sparta', 'kratos.s@olympus.gr', 'Cancelled', 9, 7),
+    ('Aloy', 'Nora', 'aloy.n@horizon.ca', 'Active', 1, 11),
+    ('Nathan', 'Drake', 'nathan.d@fortune.us', 'Active', 2, 3),
+    ('Chloe', 'Frazer', 'chloe.f@treasure.in', 'Active', 4, 13),
+    ('Joel', 'Miller', 'joel.m@fireflies.us', 'Suspended', 2, 8),
+    ('Ellie', 'Williams', 'ellie.w@jackson.us', 'Active', 2, 8),
+    ('Samus', 'Aran', 'samus.a@federation.jp', 'Active', 10, 1),
+    ('Cloud', 'Strife', 'cloud.s@avalance.jp', 'Active', 10, 10);
+GO
 
+-- Promotions
 INSERT INTO Reports.promotion (promotion_code, discount_value, start_date, end_date) 
 VALUES
-        ('WELCOME10', 10.00, '2026-01-01', '2026-12-31'),
-        ('MEX_IND_DAY', 20.00, '2026-09-15', '2026-09-17'),
-        ('BLACKFRIDAY', 50.00, '2026-11-25', '2026-11-30'),
-        ('HOLIDAY25', 25.00, '2026-12-01', '2026-12-26'),
-        ('SPRING2026', 15.00, '2026-03-20', '2026-06-20'),
-        ('DIWALI_DEAL', 30.00, '2026-10-25', '2026-11-05'),
-        ('SUMMER_HITS', 10.00, '2026-06-01', '2026-08-31'),
-        ('NY_CELEBRATION', 40.00, '2026-12-30', '2027-01-05'),
-        ('LOVAL_USER', 5.00, '2026-01-01', NULL),
-        ('EXPANSION_SALE', 35.00, '2026-04-01', '2026-04-30');
+    ('B2SCHOOL', 15.00, '2026-08-15', '2026-09-15'),
+    ('AUTUMN26', 20.00, '2026-09-22', '2026-12-21'),
+    ('EASTER_DEAL', 25.00, '2026-04-03', '2026-04-06'),
+    ('BOGO50', 50.00, '2026-01-01', '2026-12-31'),
+    ('CYBER_MON', 45.00, '2026-11-30', '2026-11-30'),
+    ('MAY_DAY', 10.00, '2026-05-01', '2026-05-01'),
+    ('V_DAY26', 14.00, '2026-02-10', '2026-02-15'),
+    ('CANADA_DAY', 30.00, '2026-07-01', '2026-07-01'),
+    ('US_INDEPENDENCE', 17.76, '2026-07-04', '2026-07-04'),
+    ('MEX_REVOLUTION', 20.00, '2026-11-20', '2026-11-20');
+GO
 
-        GO
--- Employee
-
-INSERT INTO Reports.employee (first_name, last_name, job_title, department, reports_to, hire_date, employment_status, work_email, country_id) 
-VALUES
-        ('Javi', 'Admin', 'Chief Technology Officer', 'Executive', NULL, '2025-01-10', 'Active', 'javi.admin@multimedia.ca', 1),
-        ('Alice', 'Smith', 'Marketing Manager', 'Marketing', 1, '2025-02-15', 'Active', 'alice.s@multimedia.ca', 1),
-        ('Roberto', 'Gomez', 'Sales Lead', 'Sales', 1, '2025-03-01', 'Active', 'roberto.g@multimedia.mx', 3),
-        ('Ananya', 'Iyer', 'Data Analyst', 'Finance', 1, '2025-05-20', 'Active', 'ananya.i@multimedia.in', 4),
-        ('Chen', 'Wei', 'Regional Manager', 'Operations', 1, '2025-06-10', 'Active', 'chen.w@multimedia.cn', 6),
-        ('Elena', 'Petrova', 'Support Specialist', 'Customer Success', 3, '2025-08-12', 'Active', 'elena.p@multimedia.ru', 5),
-        ('John', 'Doe', 'Accountant', 'Finance', 4, '2025-09-01', 'Active', 'john.d@multimedia.ca', 1),
-        ('Maria', 'Silva', 'Sales Rep', 'Sales', 3, '2025-10-05', 'Active', 'maria.s@multimedia.mx', 3),
-        ('Liam', 'Wilson', 'Marketing Specialist', 'Marketing', 2, '2025-11-20', 'Active', 'liam.w@multimedia.ca', 2),
-        ('Yuki', 'Tanaka', 'IT Support', 'IT', 1, '2026-01-05', 'Active', 'yuki.t@multimedia.jp', 10);
-
-        GO
--- Customer
-
-INSERT INTO Reports.customer (first_name, last_name, email, country_id, account_status, support_rep_id) 
-VALUES
-        ('Carlos', 'Santana', 'carlos.s@gmail.com', 3, 'Active', 8),
-        ('Priya', 'Sharma', 'priya.sharma@yahoo.in', 4, 'Active', 6),
-        ('James', 'Bond', 'j.bond@mi6.uk', 8, 'Active', 3),
-        ('Igor', 'Ivanov', 'igor.i@mail.ru', 5, 'Suspended', 6),
-        ('Mei', 'Lin', 'mei.lin@wechat.cn', 6, 'Active', 5),
-        ('Robert', 'Miller', 'bob.m@outlook.com', 2, 'Active', 9),
-        ('Fatima', 'Oliveira', 'fatima.o@uol.com.br', 7, 'Active', 3),
-        ('Hans', 'Müller', 'hans.m@t-online.de', 9, 'Cancelled', 8),
-        ('Sarah', 'Conner', 's.conner@skynet.ca', 1, 'Active', 7),
-        ('Kenji', 'Sato', 'kenji.s@docomo.jp', 10, 'Active', 10);
-
-        GO
--- Exchange 
-
+-- Exchange Rates
 INSERT INTO Reports.exchange_rate (from_currency, to_currency, rate) 
 VALUES  
-        ('USD', 'CAD', 1.350000),
-        ('MXN', 'CAD', 0.081000),
-        ('INR', 'CAD', 0.016000),
-        ('RUB', 'CAD', 0.014000),
-        ('CNY', 'CAD', 0.190000),
-        ('BRL', 'CAD', 0.270000),
-        ('GBP', 'CAD', 1.710000),
-        ('EUR', 'CAD', 1.460000),
-        ('JPY', 'CAD', 0.009000),
-        ('CAD', 'CAD', 1.000000);
+    ('AUD', 'CAD', 0.880000),
+    ('KRW', 'CAD', 0.001000),
+    ('ARS', 'CAD', 0.001500),
+    ('COP', 'CAD', 0.000340),
+    ('ZAR', 'CAD', 0.071000),
+    ('EGP', 'CAD', 0.028000),
+    ('TRY', 'CAD', 0.042000),
+    ('CHF', 'CAD', 1.520000),
+    ('SEK', 'CAD', 0.130000),
+    ('NOK', 'CAD', 0.125000),
+    ('PLN', 'CAD', 0.340000),
+    ('THB', 'CAD', 0.037000),
+    ('SGD', 'CAD', 1.010000),
+    ('NZD', 'CAD', 0.810000),
+    ('HKD', 'CAD', 0.170000);
+GO
 
-        GO
--- Order info
 
-INSERT INTO Reports.order_info (customer_id, order_date, country_id, total_amount, currency_code, promotion_id) 
+-- Order Info
+INSERT INTO Reports.order_info (customer_id, order_date, country_id, total_amount, currency_code, promotion_id)  
 VALUES 
-        (1, '2026-03-01', 3, 500.00, 'MXN', 2),
-        (2, '2026-03-02', 4, 1200.00, 'INR', 6),
-        (3, '2026-03-05', 8, 45.00, 'GBP', NULL),
-        (5, '2026-03-10', 6, 300.00, 'CNY', 10),
-        (6, '2026-03-12', 2, 89.99, 'USD', 1),
-        (7, '2026-03-15', 7, 150.00, 'BRL', 9),
-        (9, '2026-03-18', 1, 120.00, 'CAD', NULL),
-        (10, '2026-03-20', 10, 5000.00, 'JPY', 1),
-        (1, '2026-03-22', 3, 250.00, 'MXN', NULL),
-        (2, '2026-03-25', 4, 800.00, 'INR', 10);
+    (1, '2026-04-01', 9, 1250.00, 'EUR', NULL),   
+    (2, '2026-04-02', 2, 5500.00, 'USD', 4),      
+    (3, '2026-04-03', 2, 850.00, 'USD', 9),
+    (4, '2026-04-04', 10, 2100.00, 'JPY', 3),     
+    (5, '2026-04-05', 2, 15000.00, 'USD', 8),   
+    (6, '2026-04-06', 8, 95.00, 'GBP', NULL),
+    (7, '2026-04-07', 9, 4500.00, 'EUR', NULL),  
+    (8, '2026-04-08', 9, 3000.00, 'EUR', 10),    
+    (9, '2026-04-09', 1, 400.00, 'CAD', 1),
+    (10, '2026-04-10', 2, 2200.00, 'USD', 9),     
+    (11, '2026-04-11', 4, 45.00, 'INR', NULL),
+    (12, '2026-04-12', 2, 310.00, 'USD', 7),
+    (13, '2026-04-13', 2, 1100.00, 'USD', NULL),  
+    (14, '2026-04-14', 10, 75.00, 'JPY', 3),
+    (15, '2026-04-15', 10, 12000.00, 'JPY', NULL); 
+GO
 
-        GO
--- Order details
-
+-- Order Details
 INSERT INTO Reports.order_details (order_id, unit_price, quantity) 
 VALUES
-        (1, 250.00, 2),
-        (2, 400.00, 3),
-        (3, 45.00, 1),
-        (4, 150.00, 2),
-        (5, 89.99, 1),
-        (6, 75.00, 2),
-        (7, 60.00, 2),
-        (8, 2500.00, 2),
-        (9, 125.00, 2),
-        (10, 800.00, 1);
-
-
-        GO
-/*====================================================================
-     INDEXES 
-====================================================================*/
---Non-cluster Index for Reports.promotion
-
-IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'idx_promotion_code_lookup')
-    DROP INDEX idx_promotion_code_lookup ON Reports.promotion;
-GO
-
-CREATE NONCLUSTERED INDEX idx_promotion_code_lookup
-ON Reports.promotion (promotion_code)
-INCLUDE (discount_value);
-GO
-
--- Non-cluster index for Reports.exchange_rate
-
-IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'idx_exchange_rate_currencies')
-    DROP INDEX idx_exchange_rate_currencies ON Reports.exchange_rate;
-GO
-
-CREATE NONCLUSTERED INDEX idx_exchange_rate_currencies
-ON Reports.exchange_rate (from_currency, to_currency)
-INCLUDE (rate, effective_date);
+    (1, 1250.00, 1),
+    (2, 1100.00, 5),
+    (3, 425.00, 2),
+    (4, 700.00, 3),
+    (5, 5000.00, 3),
+    (6, 95.00, 1),
+    (7, 1500.00, 3),
+    (8, 1000.00, 3),
+    (9, 200.00, 2),
+    (10, 1100.00, 2),
+    (11, 45.00, 1),
+    (12, 155.00, 2),
+    (13, 550.00, 2),
+    (14, 75.00, 1),
+    (15, 4000.00, 3);
 GO
 
 
 /*====================================================================
-     PROCEDURES
+     5. PERFORMANCE OPTIMIZATION (Indexes)
 ====================================================================*/
-CREATE PROCEDURE Reports.sp_update_exchange_rate
-    @currency CHAR(3),
-    @new_rate DECIMAL(18,6)
-AS
-BEGIN
-    SET NOCOUNT ON;
-    
-    IF EXISTS (SELECT 1 FROM Reports.exchange_rate WHERE from_currency = @currency)
-    BEGIN
-        UPDATE Reports.exchange_rate
-        SET rate = @new_rate,
-            effective_date = GETDATE()
-        WHERE from_currency = @currency;
-        PRINT 'Rate updated for ' + @currency;
-    END
-    ELSE
-    BEGIN
-        PRINT 'Currency not found.';
-    END
-END;
+-- Clustered Index on Order Info (customer/date for reporting efficiency)
+CREATE CLUSTERED INDEX CIX_order_info_customer_date 
+ON Reports.order_info (customer_id, order_date DESC);
 GO
 
+-- Filtered Index for High Value Orders
+CREATE NONCLUSTERED INDEX idx_high_value_orders
+ON Reports.order_info(order_id)
+INCLUDE (customer_id, order_date, total_amount)
+WHERE total_amount > 1000;
+GO
+
+-- Filtered Index for Active Promotions
+CREATE NONCLUSTERED INDEX idx_order_info_active_filtered
+ON Reports.order_info (customer_id, order_date)
+INCLUDE (total_amount, currency_code, promotion_id)
+WHERE promotion_id IS NOT NULL;
+GO
+
+/*====================================================================
+     6. STORED PROCEDURES (Business Logic)
+====================================================================*/
+-- Apply Promotions
 CREATE PROCEDURE Reports.sp_apply_seasonal_promotion
     @order_id INT,
     @promotion_code VARCHAR(20)
 AS
 BEGIN
-    DECLARE @discount DECIMAL(5,2);
-    DECLARE @promo_id INT;
+    DECLARE @discount DECIMAL(5,2), @promo_id INT;
 
-    -- Get the discount value from our promotion table
     SELECT @promo_id = promotion_id, @discount = discount_value 
-    FROM promotion  WHERE promotion_code = @promotion_code;
+    FROM Reports.promotion WHERE promotion_code = @promotion_code;
 
     IF @promo_id IS NOT NULL
     BEGIN
-        UPDATE order_info SET promotion_id = @promo_id, total_amount = total_amount - (total_amount * (@discount / 100))
+        UPDATE Reports.order_info 
+        SET promotion_id = @promo_id, 
+            total_amount = total_amount - (total_amount * (@discount / 100))
         WHERE order_id = @order_id;
         PRINT 'Promotion applied successfully.';
     END
     ELSE
-    BEGIN
-        PRINT 'Invalid Promotion Code.';
-    END
+        RAISERROR('Invalid Promotion Code.', 16, 1);
 END;
 GO
 
-CREATE OR ALTER PROCEDURE sp_GetCustomersDynamic
-    @p_city NVARCHAR(100) = NULL,
-    @p_status NVARCHAR(50) = NULL
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    DECLARE @sql NVARCHAR(MAX) = 'SELECT * FROM Customer WHERE 1=1';
-
-    IF @p_city IS NOT NULL
-        SET @sql += ' AND City = @city';
-
-    IF @p_status IS NOT NULL
-        SET @sql += ' AND AccountStatus = @status';
-
-    EXEC sp_executesql @sql,
-        N'@city NVARCHAR(100), @status NVARCHAR(50)',
-        @city = @p_city,
-        @status = @p_status;
-END;
-GO
-
-CREATE OR ALTER PROCEDURE sp_UpdateCustomerStatusDynamic
-    @p_customerId INT,
-    @p_newStatus NVARCHAR(50)
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    DECLARE @sql NVARCHAR(MAX) = 'UPDATE Customer SET AccountStatus = @status WHERE CustomerId = @id';
-
-    EXEC sp_executesql @sql,
-        N'@status NVARCHAR(50), @id INT',
-        @status = @p_newStatus,
-        @id = @p_customerId;
-END;
-GO
-
-CREATE OR ALTER PROCEDURE sp_DisplayCustomers
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    DECLARE @FirstName NVARCHAR(100), @LastName NVARCHAR(100), @Email NVARCHAR(100), @AccountStatus NVARCHAR(50);
-
-    DECLARE cust_cursor CURSOR FOR
-        SELECT FirstName, LastName, Email, AccountStatus FROM Customer;
-
-    OPEN cust_cursor;
-
-    FETCH NEXT FROM cust_cursor INTO @FirstName, @LastName, @Email, @AccountStatus;
-    WHILE @@FETCH_STATUS = 0
-    BEGIN
-        PRINT @FirstName + ' ' + @LastName + ' | ' + @Email + ' | ' + @AccountStatus;
-        FETCH NEXT FROM cust_cursor INTO @FirstName, @LastName, @Email, @AccountStatus;
-    END
-
-    CLOSE cust_cursor;
-    DEALLOCATE cust_cursor;
-END;
-GO
-
-CREATE OR ALTER PROCEDURE sp_CustomersByEmployee
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    DECLARE @EmpId INT, @EmpF NVARCHAR(100), @EmpL NVARCHAR(100);
-    DECLARE @CustF NVARCHAR(100), @CustL NVARCHAR(100);
-
-    DECLARE emp_cursor CURSOR FOR
-        SELECT EmployeeId, FirstName, LastName FROM Employee;
-
-    OPEN emp_cursor;
-
-    FETCH NEXT FROM emp_cursor INTO @EmpId, @EmpF, @EmpL;
-    WHILE @@FETCH_STATUS = 0
-    BEGIN
-        PRINT 'Employee: ' + @EmpF + ' ' + @EmpL;
-
-        DECLARE cust_cursor CURSOR FOR
-            SELECT FirstName, LastName FROM Customer WHERE SupportRepId = @EmpId;
-
-        OPEN cust_cursor;
-
-        FETCH NEXT FROM cust_cursor INTO @CustF, @CustL;
-        WHILE @@FETCH_STATUS = 0
-        BEGIN
-            PRINT '   Customer: ' + @CustF + ' ' + @CustL;
-            FETCH NEXT FROM cust_cursor INTO @CustF, @CustL;
-        END
-
-        CLOSE cust_cursor;
-        DEALLOCATE cust_cursor;
-
-        FETCH NEXT FROM emp_cursor INTO @EmpId, @EmpF, @EmpL;
-    END
-
-    CLOSE emp_cursor;
-    DEALLOCATE emp_cursor;
-END;
-GO
-
-CREATE OR ALTER PROCEDURE sp_SuspendInactiveCustomers
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    DECLARE @CustId INT;
-
-    DECLARE cust_cursor CURSOR FOR
-        SELECT CustomerId FROM Customer WHERE SupportRepId IS NULL;
-
-    OPEN cust_cursor;
-
-    FETCH NEXT FROM cust_cursor INTO @CustId;
-    WHILE @@FETCH_STATUS = 0
-    BEGIN
-        UPDATE Customer
-        SET AccountStatus = 'Suspended'
-        WHERE CustomerId = @CustId;
-
-        FETCH NEXT FROM cust_cursor INTO @CustId;
-    END
-
-    CLOSE cust_cursor;
-    DEALLOCATE cust_cursor;
-END;
-GO
-
-
+-- Update Exchange Rates
 CREATE PROCEDURE Reports.sp_update_exchange_rate
     @currency CHAR(3),
     @new_rate DECIMAL(18,6)
 AS
 BEGIN
-    SET NOCOUNT ON;
+    UPDATE Reports.exchange_rate
+    SET rate = @new_rate, effective_date = GETDATE()
+    WHERE from_currency = @currency;
     
-    IF EXISTS (SELECT 1 FROM Reports.exchange_rate WHERE from_currency = @currency)
-    BEGIN
-        UPDATE Reports.exchange_rate
-        SET rate = @new_rate,
-            effective_date = GETDATE()
-        WHERE from_currency = @currency;
-        PRINT 'Rate updated for ' + @currency;
-    END
-    ELSE
-    BEGIN
-        PRINT 'Currency not found.';
-    END
-END;
-GO
-
-CREATE FUNCTION Reports.fn_calculate_discount
-(
-    @total DECIMAL(10,2),
-    @promotion_id INT
-)
-RETURNS DECIMAL(10,2)
-AS
-BEGIN
-    DECLARE @discount DECIMAL(5,2);
-
-    SELECT @discount = discount_value
-    FROM Reports.promotion
-    WHERE promotion_id = @promotion_id;
-
-    RETURN @total - (@total * (@discount / 100));
-END;
-GO
-
-CREATE TRIGGER Reports.trg_check_promotion_limit
-ON Reports.promotion
-AFTER INSERT, UPDATE
-AS
-BEGIN
-    IF EXISTS (SELECT 1 FROM inserted WHERE discount_value > 50.00)
-    BEGIN
-        RAISERROR('Business Rule Violation: Promotions cannot exceed 50%%.', 16, 1);
-        ROLLBACK TRANSACTION;
-    END
+    IF @@ROWCOUNT = 0 PRINT 'Currency not found.';
+    ELSE PRINT 'Rate updated for ' + @currency;
 END;
 GO
 
 /*====================================================================
-        VIEWS
+     7. VIEWS & SECURITY
 ====================================================================*/
-
-USE MultimediaSolutions;
-GO
-
-CREATE VIEW Reports.v_executive_global_sales
-AS
-SELECT 
-    o.order_id,
-    c.first_name + ' ' + c.last_name AS customer_name,
-    co.country_name,
-    o.total_amount AS local_amount,
-    o.currency_code,
-    (o.total_amount * er.rate) AS total_in_cad,
-    o.order_date
-FROM Reports.order_info o
-JOIN Reports.customer c ON o.customer_id = c.customer_id
-JOIN Reports.country co ON o.country_id = co.country_id
-JOIN Reports.exchange_rate er ON o.currency_code = er.from_currency
-WHERE er.to_currency = 'CAD';
-GO
-
-CREATE VIEW Reports.v_customer_orders
-AS
-SELECT 
-    c.customer_id,
-    c.first_name,
-    c.last_name,
-    oi.order_id,
-    oi.order_date,
-    oi.total_amount
+CREATE VIEW Reports.v_customer_orders AS
+SELECT c.first_name, c.last_name, oi.order_date, oi.total_amount
 FROM Reports.customer c
 JOIN Reports.order_info oi ON c.customer_id = oi.customer_id;
 GO
 
-/*====================================================================
-         DEMO EXECUTION 
-====================================================================*/
-
-
-/*====================================================================
-   VALIDATION QUERIES
-====================================================================*/
-
-
-/*====================================================================
-     SECURITY - Roles
-====================================================================*/
-
--- TesterUser
-IF DATABASE_PRINCIPAL_ID('TesterUser') IS NULL
-    CREATE ROLE TesterUser;
+CREATE VIEW Reports.v_executive_global_sales AS
+SELECT o.order_id, c.first_name + ' ' + c.last_name AS customer_name,
+       co.country_name, o.total_amount, (o.total_amount * er.rate) AS total_in_cad
+FROM Reports.order_info o
+JOIN Reports.customer c ON o.customer_id = c.customer_id
+JOIN Reports.country co ON o.country_id = co.country_id
+JOIN Reports.exchange_rate er ON o.currency_code = er.from_currency;
 GO
 
--- Financial
-IF DATABASE_PRINCIPAL_ID('FinanceRole') IS NULL
-    CREATE ROLE FinanceRole;
+IF DATABASE_PRINCIPAL_ID('FinanceRole') IS NULL CREATE ROLE FinanceRole;
+IF DATABASE_PRINCIPAL_ID('MarketingRole') IS NULL CREATE ROLE MarketingRole;
+IF DATABASE_PRINCIPAL_ID('ExecutiveRole') IS NULL CREATE ROLE ExecutiveRole;
+IF DATABASE_PRINCIPAL_ID('TesterUser') IS NULL CREATE ROLE TesterUser;
 GO
 
--- Marketing
-IF DATABASE_PRINCIPAL_ID('MarketingRole') IS NULL
-    CREATE ROLE MarketingRole;
-GO
-
--- Executive
-IF DATABASE_PRINCIPAL_ID('ExecutiveRole') IS NULL
-    CREATE ROLE ExecutiveRole;
-GO
-
-
-/*====================================================================
-                GRANT PERMISSIONS
-====================================================================*/
---  Financial for specific reports
-GRANT SELECT ON Reports.exchange_rate TO FinanceRole;
+-- Finance: Full control over money and reporting
+GRANT SELECT, INSERT, UPDATE ON Reports.exchange_rate TO FinanceRole;
 GRANT EXECUTE ON Reports.sp_update_exchange_rate TO FinanceRole;
 GRANT SELECT ON Reports.v_executive_global_sales TO FinanceRole;
 
--- Marketing Role can use Promotions but not change Rates
-GRANT SELECT ON Reports.promotion TO MarketingRole;
+-- Marketing: Can manage promotions and track order success
+GRANT SELECT, INSERT, UPDATE ON Reports.promotion TO MarketingRole;
 GRANT EXECUTE ON Reports.sp_apply_seasonal_promotion TO MarketingRole;
+GRANT SELECT ON Reports.v_customer_orders TO MarketingRole;
+
+-- Executive: Read-only access to everything in the Reports schema
+GRANT SELECT ON Reports.v_executive_global_sales TO ExecutiveRole;
+GRANT SELECT ON Reports.v_customer_orders TO ExecutiveRole;
+
+-- Tester: Full read access to validate the whole system
+GRANT SELECT ON SCHEMA::Reports TO TesterUser;
+GO
+
+PRINT 'MultimediaSolutions Overlay Applied Successfully.';

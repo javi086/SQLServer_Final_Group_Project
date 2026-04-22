@@ -3,7 +3,7 @@ IF EXISTS (
     WHERE name = 'idx_high_value_orders'
     AND object_id = OBJECT_ID('Reports.order_info')
 )
-DROP INDEX idx_high_value_orders ON Reports.order_info;
+DROP INDEX Reports.idx_high_value_orders ON Reports.order_info;
 GO
 
 --- Baseline Performance (BEFORE Index) ---
@@ -27,7 +27,7 @@ GO
 SET SHOWPLAN_TEXT OFF;
 GO
 
-CREATE NONCLUSTERED INDEX idx_high_value_orders
+CREATE NONCLUSTERED INDEX Reports.idx_high_value_orders
 ON Reports.order_info(order_id)
 INCLUDE (customer_id, order_date, total_amount)
 WHERE total_amount > 1000;   --- This index only stores high-value orders, reducing index size and improving performance. ---
