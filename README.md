@@ -137,23 +137,22 @@ Reduces unnecessary storage usage
 
 ## Instructions to run scripts.
 
-1. Open SQL Server Management Studio (SSMS)
-2. Connect to your SQL Server instance
-3. Run the scripts in the following order:
+Instructions to Run the Script
+1. Prerequisites
+Microsoft SQL Server Management Studio (SSMS): Version 18.0 or higher is recommended.
 
-   Step 1: Run schema and table creation scripts  
-   Step 2: Run data population (seed/test data) scripts  
-   Step 3: Run functions, stored procedures, views, and triggers  
-   Step 4: Run security.sql to create roles and permissions  
-   Step 5: Run index scripts (optimization folder)  
+Base Database: The MultimediaSolutions database must be restored and available on your local or server instance before proceeding.
 
-4. Execute test_cases.sql to validate system functionality:
-   - Tests workflows such as order processing, promotions, and reporting
+2. Execution Steps
+  1. Open SSMS: Connect to the SQL Server instance where MultimediaSolutions is hosted.
 
-5. Execute permission_test.sql to validate role-based access control:
-   - Confirms correct permissions for Finance, Marketing, Executive, and Tester roles
+  2. Load the Script: Open the Overlay_Design.sql file (File > Open > File).
 
-6. Verify outputs in SSMS result window
+  3. Verify Target Database: Ensure the script is set to use the correct database. While the script contains a USE MultimediaSolutions; command, it is best practice to verify the dropdown menu in the SSMS toolbar.
+
+  4. Execute: Click the Execute button or press F5.
+
+  5. Confirm Success: Check the Messages tab at the bottom. You should see "MultimediaSolutions Overlay Applied Successfully.".
 
 ## Github usernames.
 1. Sheree Drummond (Luvsher)
