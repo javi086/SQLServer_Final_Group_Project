@@ -83,7 +83,8 @@ CREATE TABLE Reports.promotion (
     end_date DATE NULL,
     CONSTRAINT PK_Reports_promotion PRIMARY KEY CLUSTERED (promotion_id),
     CONSTRAINT UQ_Reports_promotion_code UNIQUE (promotion_code),
-    CONSTRAINT CK_Reports_promotion_discount CHECK (discount_value <= 50.00)
+    CONSTRAINT CK_Reports_promotion_discount CHECK (discount_value <= 50.00),
+    CONSTRAINT CK_Reports_promotion_dates CHECK (end_date IS NULL OR end_date >= start_date)
 );
 
 -- Exchange Rate Table (FIXED - Column-level defaults)
@@ -139,7 +140,9 @@ CREATE TABLE Reports.order_info (
     CONSTRAINT FK_Reports_order_info_promotion FOREIGN KEY (promotion_id) 
         REFERENCES Reports.promotion(promotion_id),
     CONSTRAINT FK_Reports_order_info_country FOREIGN KEY (country_id) 
-        REFERENCES Reports.country(country_id)
+        REFERENCES Reports.country(country_id),
+    CONSTRAINT CK_Reports_order_info_total_amount CHECK (total_amount > 0),
+    CONSTRAINT CK_Reports_order_info_order_date CHECK (order_date <= GETDATE())
 );
 
 -- Order Details Table

@@ -14,21 +14,35 @@ AS
 BEGIN
     DECLARE @discount DECIMAL(5,2);
     DECLARE @promo_id INT;
+    DECLARE @start_date DATE;
+    DECLARE @end_date DATE;
 
-    -- Get the discount value from our promotion table
-    SELECT @promo_id = promotion_id, @discount = discount_value 
+    -- Get the discount value and validity window from our promotion table
+    SELECT @promo_id = promotion_id,
+           @discount = discount_value,
+           @start_date = start_date,
+           @end_date = end_date
     FROM Reports.promotion  WHERE promotion_code = @promotion_code;
 
-    IF @promo_id IS NOT NULL
-    BEGIN
-        UPDATE Reports.order_info SET promotion_id = @promo_id, total_amount = total_amount - (total_amount * (@discount / 100))
-        WHERE order_id = @order_id;
-        PRINT 'Promotion applied successfully.';
-    END
-    ELSE
+    IF @promo_id IS NULL
     BEGIN
         PRINT 'Invalid Promotion Code.';
+        RETURN;
     END
+
+    -- Reject expired or not-yet-active promotions
+    IF CAST(GETDATE() AS DATE) < @start_date
+       OR (@end_date IS NOT NULL AND CAST(GETDATE() AS DATE) > @end_date)
+    BEGIN
+        PRINT 'Promotion Code is not active for the current date.';
+        RETURN;
+    END
+
+    UPDATE Reports.order_info
+    SET promotion_id = @promo_id,
+        total_amount = total_amount - (total_amount * (@discount / 100))
+    WHERE order_id = @order_id;
+    PRINT 'Promotion applied successfully.';
 END;
 GO
 

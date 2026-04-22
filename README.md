@@ -137,5 +137,9 @@ Base Database: The MultimediaSolutions database must be restored and available o
 5. Javier Santana (javi086)
 6. Tandin Phurba (gurrrrrbu)
 
+## Contributors & Enhancements
+- **Riyasdeen Abdul Hakkim - n01708860**
+   * Description: Strengthened data integrity and business-rule enforcement across the schema and promotion workflow. Added table-level `CHECK` constraints to `Reports.order_info` (`total_amount > 0`, `order_date <= GETDATE()`) and to `Reports.promotion` (`end_date >= start_date`) to prevent invalid orders and misconfigured promotions at the database level. Enhanced the `sp_apply_seasonal_promotion` stored procedure to validate the promotion's active window, rejecting expired or not-yet-active promotion codes instead of silently discounting orders. Mirrored the same constraints in `Overlay_Design.sql` to keep the idempotent deployment script consistent with the per-object schema files.
+
 
 
