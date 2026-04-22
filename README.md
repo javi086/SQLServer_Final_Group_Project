@@ -136,7 +136,7 @@ Reduces unnecessary storage usage
 - Performance-optimized order processing
 
 
-## Instructions to run scripts.
+## Instructions to step up database
 
 Instructions to Run the Script
 
