@@ -31,34 +31,7 @@ These entities are connected using primary and foreign key relationships to ensu
     * Description: 
 
 5. (DB Developer): Javier Santana - n01753766
-    * Description:
-    * Tables & Schema
-        Reports
-        * Country
-        * Exchange
-        * Promotion
-
-* Procedures
-  * exchange_Rate_Control.sql (Duplicate)
-  * sp_apply_seasonal_promotion.sql
-  * sp_update_exchange_rate.sql
-  * trg_check_promotion_limit.sql
-
-* Views
-  * v_executive_global_sales.sql
-
-* General
-  * Overlay_Design.sql
-  * Business case
-  * Readme
-
-* Index
-  * idx_promotion_code_lookup
-  * idx_exchange_rate_currencies
-
-* Others
-  *  Users
-  * Security
+    As a developer for the Multimedia Solutions global expansion project, I was responsible for designing and implementing the core infrastructure required for international operations and financial governance. My primary contribution involved the creation of the Reports schema and the architectural design of the Country, Exchange Rate, and Promotion tables, which established the foundational data layer for cross-border transactions. I engineered advanced programmatic logic, including a specialized data integrity trigger to enforce discount caps and stored procedures for secure currency management, ensuring both business rule compliance and operational security. To support executive decision-making, I developed a complex Consolidated Sales View that leverages custom Non-Clustered Indexes—specifically optimized to transition execution plans from scans to seeks—providing a "Single Source of Truth" for global revenue in CAD. Beyond the database objects, I authored the Master Overlay script and project documentation, ensuring a seamless, idempotent deployment process and a robust Role-Based Access Control (RBAC) security model.
 
 6. (Reporting, Data Analysis & Validation): Tandin Phurba - n01654961
 
