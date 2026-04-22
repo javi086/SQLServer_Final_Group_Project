@@ -14,6 +14,8 @@ CREATE TABLE Reports.order_info (
     CONSTRAINT PK_Reports_order_info                 PRIMARY KEY CLUSTERED (order_id),
     CONSTRAINT FK_Reports_order_info_customer        FOREIGN KEY (customer_id) REFERENCES Reports.customer(customer_id),
     CONSTRAINT FK_Reports_order_info_country         FOREIGN KEY (country_id) REFERENCES Reports.country(country_id),
-    CONSTRAINT FK_Reports_order_info_promotion       FOREIGN KEY (promotion_id) REFERENCES Reports.promotion(promotion_id)
+    CONSTRAINT FK_Reports_order_info_promotion       FOREIGN KEY (promotion_id) REFERENCES Reports.promotion(promotion_id),
+    CONSTRAINT CK_Reports_order_info_total_amount    CHECK (total_amount > 0),
+    CONSTRAINT CK_Reports_order_info_order_date      CHECK (order_date <= GETDATE())
 );
 GO

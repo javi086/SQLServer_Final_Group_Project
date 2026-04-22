@@ -15,6 +15,7 @@ CREATE TABLE Reports.promotion (
 
     CONSTRAINT PK_Reports_promotion             PRIMARY KEY CLUSTERED (promotion_id),
     CONSTRAINT UQ_Reports_promotion_code        UNIQUE (promotion_code),
-    CONSTRAINT CK_Reports_promotion_value       CHECK (discount_value <= 50.00)
+    CONSTRAINT CK_Reports_promotion_value       CHECK (discount_value <= 50.00),
+    CONSTRAINT CK_Reports_promotion_dates       CHECK (end_date IS NULL OR end_date >= start_date)
 );
 GO
