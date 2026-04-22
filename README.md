@@ -27,7 +27,7 @@ These entities are connected using primary and foreign key relationships to ensu
 3. (User Manual, Seed Data, Testing & Evaluation): Kyle Chau - n10004894
     * Description: Created a user-friendly startup guide for setting up and using the MultimediaSolutions database. This included step-by-step instructions for database creation, initialization, and verification using SQL Server Management Studio. Developed and documented seed data to populate the database for testing purposes. Performed testing and evaluation of all database components, including tables, views, and stored procedures, by executing validation queries and confirming expected outputs. Ensured proper functionality by identifying and resolving errors during script execution.
 
- 4. (Table Creation & Business Logic): Thompson Osei - n01714324
+ 4. (Table Creation, Isert, Index & Business Logic): Thompson Osei - n01714324
     * Description: Description: I designed and implemented a relational database module in the Reports schema to manage customers, orders, and promotions. I created tables with proper constraints to ensure data integrity, developed a function to automate discount calculations, and built a view to simplify customer order reporting. I also tested the system using sample data and optimized query performance by creating a filtered index for high-value orders.
 
 5. (DB Developer): Javier Santana - n01753766
