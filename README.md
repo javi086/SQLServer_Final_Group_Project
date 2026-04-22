@@ -139,12 +139,12 @@ Reduces unnecessary storage usage
 ## Instructions to run scripts.
 
 Instructions to Run the Script
-1. Prerequisites
+***Prerequisites***
 Microsoft SQL Server Management Studio (SSMS): Version 18.0 or higher is recommended.
 
 Base Database: The MultimediaSolutions database must be restored and available on your local or server instance before proceeding.
 
-2. Execution Steps
+***Execution Steps***
   1. Open SSMS: Connect to the SQL Server instance where MultimediaSolutions is hosted.
 
   2. Load the Script: Open the Overlay_Design.sql file (File > Open > File).
