@@ -25,7 +25,7 @@ Multimedia Solutions is a Canadian-based media distributor undergoing a strategi
 
 ## Github usernames.
 1. Sheree Drummond (Github username)
-2. Suhani Mehta (Github username)
+2. Suhani Mehta (Suhanimeh)
 3. Thompson Osei (Github username)
 4. Kyle Chau (Github username)
 5. Javier Santana (Github username)
