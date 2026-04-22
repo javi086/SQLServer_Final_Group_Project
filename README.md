@@ -60,8 +60,9 @@ These entities are connected using primary and foreign key relationships to ensu
   *  Users
   * Security
 
-6. (ROLE - TBD): Tandin Phurba - n01654961
-    * Description:
+6. (Reporting, Data Analysis & Validation): Tandin Phurba - n01654961
+
+◦ Description: Designed and implemented advanced reporting features for the MultimediaSolutions database by developing stored procedures and views to transform transactional data into meaningful business insights. Created a monthly country sales reporting procedure that aggregates order data, calculates total sales, and converts all values into CAD using dynamic exchange rate logic. Developed a detailed order-level analytical view to provide deeper visibility into customer activity, country distribution, and currency conversion results. Implemented data validation through CHECK constraints to enforce positive exchange rates and maintain data integrity. Ensured accuracy and reliability of outputs by testing queries, resolving join and duplication issues, and validating results against expected business scenarios.
 
    # Database Design
 -  Customer Table
