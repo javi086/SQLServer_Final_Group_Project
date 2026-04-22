@@ -11,6 +11,9 @@ Multimedia Solutions is a Canadian-based media distributor undergoing a strategi
     * Description: 
 2. (ROLE - TBD): Suhani Mehta - n01750525
   * Description:
+
+3. (User Manual, Seed Data, Testing & Evaluation): Kyle Chau - n10004894
+    * Description: Created a user-friendly startup guide for setting up and using the MultimediaSolutions database. This included step-by-step instructions for database creation, initialization, and verification using SQL Server Management Studio. Developed and documented seed data to populate the database for testing purposes. Performed testing and evaluation of all database components, including tables, views, and stored procedures, by executing validation queries and confirming expected outputs. Ensured proper functionality by identifying and resolving errors during script execution.
    # Database Design
 -  Customer Table
 Stores customer personal and subscription details
@@ -81,8 +84,7 @@ Reduces unnecessary storage usage
 
 4. (ROLE - TBD): Thompson Osei - n01714324
     * Description: 
-5. (User Manual, Seed Data, Testing & Evaluation): Kyle Chau - n10004894
-    * Description: Created a user-friendly startup guide for setting up and using the MultimediaSolutions database. This included step-by-step instructions for database creation, initialization, and verification using SQL Server Management Studio. Developed and documented seed data to populate the database for testing purposes. Performed testing and evaluation of all database components, including tables, views, and stored procedures, by executing validation queries and confirming expected outputs. Ensured proper functionality by identifying and resolving errors during script execution.
+5. 
 6. (ROLE - TBD): Javier Santana - n01753766
     * Description:
 7. (ROLE - TBD): Tandin Phurba - n01654961
