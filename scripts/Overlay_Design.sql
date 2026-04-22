@@ -27,7 +27,7 @@ END
 GO
 
 /*====================================================================
-     2. CLEANUP (Drop existing objects to allow re-runs)
+     2. CLEANUP 
 ====================================================================*/
 -- Drop Roles (Must drop users/members first if assigned)
 IF DATABASE_PRINCIPAL_ID('FinanceRole') IS NOT NULL DROP ROLE FinanceRole;
@@ -48,7 +48,7 @@ IF OBJECT_ID(N'Reports.v_executive_global_sales', N'V') IS NOT NULL DROP VIEW Re
 IF OBJECT_ID(N'Reports.sp_apply_seasonal_promotion', N'P') IS NOT NULL DROP PROCEDURE Reports.sp_apply_seasonal_promotion;
 IF OBJECT_ID(N'Reports.sp_update_exchange_rate', N'P') IS NOT NULL DROP PROCEDURE Reports.sp_update_exchange_rate;
 
--- Drop Tables (Child tables first)
+-- Drop Tables 
 IF OBJECT_ID(N'Reports.order_details', N'U') IS NOT NULL DROP TABLE Reports.order_details;
 IF OBJECT_ID(N'Reports.order_info', N'U') IS NOT NULL DROP TABLE Reports.order_info;
 IF OBJECT_ID(N'Reports.customer', N'U') IS NOT NULL DROP TABLE Reports.customer;
@@ -61,7 +61,7 @@ IF OBJECT_ID(N'Reports.trg_check_promotion_limit', N'TR') IS NOT NULL DROP TRIGG
 GO
 
 /*====================================================================
-     3. TABLE CREATION (Standardized & Fixed)
+     3. TABLE CREATION 
 ====================================================================*/
 -- Country Table
 CREATE TABLE Reports.country (
@@ -156,7 +156,7 @@ CREATE TABLE Reports.order_details (
 GO
 
 /*====================================================================
-     4. DATA POPULATION (Seed Data)
+     4. DATA POPULATION 
 ====================================================================*/
 -- Country
 INSERT INTO Reports.country (country_name, country_code, currency_code) 
@@ -248,7 +248,11 @@ VALUES
     ('THB', 'CAD', 0.037000),
     ('SGD', 'CAD', 1.010000),
     ('NZD', 'CAD', 0.810000),
-    ('HKD', 'CAD', 0.170000);
+    ('HKD', 'CAD', 0.170000),
+    ('GBP', 'CAD', 1.750000),
+    ('JPY', 'CAD', 0.009000),
+    ('EUR', 'CAD', 1.480000),
+    ('USD', 'CAD', 1.380000);
 GO
 
 
@@ -296,7 +300,7 @@ GO
 /*====================================================================
      5. PERFORMANCE OPTIMIZATION (Indexes)
 ====================================================================*/
--- Clustered Index on Order Info (customer/date for reporting efficiency)
+-- Clustered Index on Order Info 
 CREATE CLUSTERED INDEX CIX_order_info_customer_date 
 ON Reports.order_info (customer_id, order_date DESC);
 GO
@@ -397,6 +401,42 @@ GRANT SELECT ON Reports.v_customer_orders TO ExecutiveRole;
 
 -- Tester: Full read access to validate the whole system
 GRANT SELECT ON SCHEMA::Reports TO TesterUser;
+GO
+
+
+
+/*====================================================================
+     UPDATED SMOKE TEST
+====================================================================*/
+PRINT '--- STARTING SMOKE TEST ---';
+
+-- 1. TEST BUSINESS RULE (Promotion Limit Trigger)
+PRINT 'Testing Trigger (Rule: Max 50% discount)...';
+BEGIN TRY
+    -- This should FAIL because the limit is 50.00%
+    INSERT INTO Reports.promotion (promotion_code, discount_value, start_date)
+    VALUES ('EXCESSIVE_DISCOUNT', 80.00, GETDATE());
+END TRY
+BEGIN CATCH
+    PRINT 'SUCCESS: Trigger blocked illegal 80% discount. Message: ' + ERROR_MESSAGE();
+END CATCH;
+
+-- 2. TEST EXCHANGE RATE LOGIC (Stored Procedure)
+PRINT 'Updating EUR exchange rate to 1.55...';
+EXEC Reports.sp_update_exchange_rate @currency = 'EUR', @new_rate = 1.55;
+
+-- 3. TEST GLOBAL SALES VIEW 
+-- Corrected columns to match your view definition
+PRINT 'Validating Executive Consolidation Report...';
+SELECT 
+    order_id, 
+    customer_name,
+    country_name, 
+    total_amount -- This is the 'local amount' in your view
+    -- Note: currency_code was removed as it is not in your view definition
+FROM Reports.v_executive_global_sales;
+
+PRINT '--- SMOKE TEST COMPLETE ---';
 GO
 
 PRINT 'MultimediaSolutions Overlay Applied Successfully.';

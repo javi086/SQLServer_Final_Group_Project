@@ -27,6 +27,42 @@ These entities are connected using primary and foreign key relationships to ensu
 3. (User Manual, Seed Data, Testing & Evaluation): Kyle Chau - n10004894
     * Description: Created a user-friendly startup guide for setting up and using the MultimediaSolutions database. This included step-by-step instructions for database creation, initialization, and verification using SQL Server Management Studio. Developed and documented seed data to populate the database for testing purposes. Performed testing and evaluation of all database components, including tables, views, and stored procedures, by executing validation queries and confirming expected outputs. Ensured proper functionality by identifying and resolving errors during script execution.
 
+ 4. (ROLE - TBD): Thompson Osei - n01714324
+    * Description: 
+
+5. (ROLE - TBD): Javier Santana - n01753766
+    * Description:
+    * Tables & Schema
+        Reports
+        * Country
+        * Exchange
+        * Promotion
+
+* Procedures
+  * exchange_Rate_Control.sql (Duplicate)
+  * sp_apply_seasonal_promotion.sql
+  * sp_update_exchange_rate.sql
+  * trg_check_promotion_limit.sql
+
+* Views
+  * v_executive_global_sales.sql
+
+* General
+  * Overlay_Design.sql
+  * Business case
+  * Readme
+
+* Index
+  * idx_promotion_code_lookup
+  * idx_exchange_rate_currencies
+
+* Others
+  *  Users
+  * Security
+
+6. (ROLE - TBD): Tandin Phurba - n01654961
+    * Description:
+
    # Database Design
 -  Customer Table
 Stores customer personal and subscription details
@@ -98,19 +134,9 @@ Reduces unnecessary storage usage
 - Dynamic data retrieval based on conditions
 - Performance-optimized order processing
 
-4. (ROLE - TBD): Thompson Osei - n01714324
-    * Description: 
-
-5. (ROLE - TBD): Javier Santana - n01753766
-    * Description:
-
-6. (ROLE - TBD): Tandin Phurba - n01654961
-    * Description:
-
-7. 
 
 ## Instructions to run scripts.
-* TBD
+
 1. Open SQL Server Management Studio (SSMS)
 2. Connect to your SQL Server instance
 3. Run the scripts in the following order:
