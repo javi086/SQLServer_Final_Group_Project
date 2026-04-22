@@ -4,16 +4,29 @@
 Multimedia Solutions is a Canadian-based media distributor undergoing a strategic digital transformation to support its rapid expansion into international markets, including the US, Mexico, India, Russia, and China.
 
 ## Schema overview.
-* TBD
+The MultimediaSolutions database is designed using a normalized relational structure to support global digital media transactions and reporting.
+
+The system includes the following core entities:
+- Customer: Stores customer information, account status, and regional data
+- Employee: Represents support staff and maintains hierarchical relationships
+- Order_Info: Stores high-level order transaction details
+- Order_Details: Stores item-level order breakdowns
+- Country: Maintains country and currency information
+- Promotion: Stores promotional offers with discount constraints
+- Exchange_Rate: Tracks currency conversion rates for global reporting
+
+These entities are connected using primary and foreign key relationships to ensure referential integrity and support business workflows such as order processing, promotion application, and financial reporting.
 
 ## Team members & roles.
-1. (ROLE - TBD): Sheree Drummond - n01730490
-    * Description: 
+1. (Database Design, Security & Workflow Testing): Sheree Drummond - n01730490
+    * Description: Assisted with the overall database architecture by designing the Entity Relationship Diagram (ERD) and contributing to the structure and data flow of the MultimediaSolutions system. Ensured data consistency, referential integrity, and efficient query performance through proper database design. Implemented and validated role-based security using SQL Server to enforce appropriate access restrictions. Developed and executed structured testing scripts to simulate real-world workflows, validate business rules, and confirm system reliability and access control.
+
 2. (ROLE - TBD): Suhani Mehta - n01750525
   * Description:
 
 3. (User Manual, Seed Data, Testing & Evaluation): Kyle Chau - n10004894
     * Description: Created a user-friendly startup guide for setting up and using the MultimediaSolutions database. This included step-by-step instructions for database creation, initialization, and verification using SQL Server Management Studio. Developed and documented seed data to populate the database for testing purposes. Performed testing and evaluation of all database components, including tables, views, and stored procedures, by executing validation queries and confirming expected outputs. Ensured proper functionality by identifying and resolving errors during script execution.
+
    # Database Design
 -  Customer Table
 Stores customer personal and subscription details
@@ -28,6 +41,7 @@ Stores employee and support staff information
 Includes job details, department, and work information
 Self-referencing relationship using ReportsTo (manager structure)
 Maintains organizational hierarchy
+
   # Stored Procedures
 - sp_GetCustomersDynamic
 Retrieves customers using dynamic filters
@@ -53,6 +67,7 @@ Shows relationship between support staff and customers
 Identifies customers without assigned support representatives
 Automatically updates their status to "Suspended"
 Uses cursor-based update logic
+
 # Indexing & Performance Optimization
 -  Clustered Index
 Applied on: (customer_id, order_date DESC)
@@ -66,6 +81,7 @@ Ensures fast record lookup while maintaining clustering flexibility
 Applied on: promotion_id IS NOT NULL
 Improves performance by indexing only promotional records
 Reduces unnecessary storage usage
+
 # Key SQL Concepts Used
 - Stored Procedures (5+ implemented)
 - Dynamic SQL using sp_executesql
@@ -84,21 +100,41 @@ Reduces unnecessary storage usage
 
 4. (ROLE - TBD): Thompson Osei - n01714324
     * Description: 
-5. 
-6. (ROLE - TBD): Javier Santana - n01753766
+
+5. (ROLE - TBD): Javier Santana - n01753766
     * Description:
-7. (ROLE - TBD): Tandin Phurba - n01654961
+
+6. (ROLE - TBD): Tandin Phurba - n01654961
     * Description:
+
+7. 
 
 ## Instructions to run scripts.
 * TBD
+1. Open SQL Server Management Studio (SSMS)
+2. Connect to your SQL Server instance
+3. Run the scripts in the following order:
+
+   Step 1: Run schema and table creation scripts  
+   Step 2: Run data population (seed/test data) scripts  
+   Step 3: Run functions, stored procedures, views, and triggers  
+   Step 4: Run security.sql to create roles and permissions  
+   Step 5: Run index scripts (optimization folder)  
+
+4. Execute test_cases.sql to validate system functionality:
+   - Tests workflows such as order processing, promotions, and reporting
+
+5. Execute permission_test.sql to validate role-based access control:
+   - Confirms correct permissions for Finance, Marketing, Executive, and Tester roles
+
+6. Verify outputs in SSMS result window
 
 ## Github usernames.
-1. Sheree Drummond (Github username)
+1. Sheree Drummond (Luvsher)
 2. Suhani Mehta (Suhanimeh)
-3. Thompson Osei (Github username)
-4. Kyle Chau (Github username)
-5. Javier Santana (Github username)
+3. Thompson Osei (KDespite)
+4. Kyle Chau (kchau210-svg)
+5. Javier Santana (javi086)
 6. Tandin Phurba (gurrrrrbu)
 
 
