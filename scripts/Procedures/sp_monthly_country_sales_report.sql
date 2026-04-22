@@ -111,3 +111,20 @@ GO
 
 EXEC Reports.sp_monthly_country_sales_report 2026, 4;
 GO
+
+ALTER TABLE Reports.exchange_rate
+ADD CONSTRAINT CK_exchange_rate_positive
+CHECK (rate > 0);
+GO
+
+INSERT INTO Reports.exchange_rate
+(from_currency, to_currency, rate, effective_date)
+VALUES ('USD','CAD', -5, '2026-04-01');
+
+INSERT INTO Reports.exchange_rate
+(from_currency, to_currency, rate, effective_date)
+VALUES ('USD','CAD', 1.40, '2026-05-01');
+GO
+
+SELECT * FROM Reports.exchange_rate;
+GO
