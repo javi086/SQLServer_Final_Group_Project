@@ -10,7 +10,7 @@ Multimedia Solutions is a Canadian-based media distributor undergoing a strategi
 1. (ROLE - TBD): Sheree Drummond - n01730490
     * Description: 
 2. (ROLE - TBD): Suhani Mehta - n01750525
-   Description:
+  * Description:
    # Database Design
 -  Customer Table
 Stores customer personal and subscription details
