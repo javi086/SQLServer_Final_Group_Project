@@ -30,7 +30,7 @@ These entities are connected using primary and foreign key relationships to ensu
  4. (ROLE - TBD): Thompson Osei - n01714324
     * Description: 
 
-5. (ROLE - TBD): Javier Santana - n01753766
+5. (DB Developer): Javier Santana - n01753766
     * Description:
     * Tables & Schema
         Reports
