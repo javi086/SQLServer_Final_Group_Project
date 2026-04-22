@@ -139,6 +139,7 @@ Reduces unnecessary storage usage
 ## Instructions to run scripts.
 
 Instructions to Run the Script
+
 ***Prerequisites***
 Microsoft SQL Server Management Studio (SSMS): Version 18.0 or higher is recommended.
 
